@@ -26,14 +26,15 @@ router.post('/', validate(createRequestSchema), async (req, res, next) => {
       res.status(400).json({ success: false, error: 'Invalid user ID' });
       return;
     }
-    const targetUser = await User.findById(toUser);
+    const safeToUserId = new mongoose.Types.ObjectId(toUser);
+    const targetUser = await User.findById(safeToUserId);
     if (!targetUser) {
       res.status(404).json({ success: false, error: 'Target user not found' });
       return;
     }
     const request = await Request.create({
       fromUser: req.user!.userId,
-      toUser,
+      toUser: safeToUserId,
       skillOffered,
       skillWanted,
       message,

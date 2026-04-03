@@ -23,7 +23,9 @@ router.post('/', validate(createReviewSchema), async (req, res, next) => {
       res.status(400).json({ success: false, error: 'Invalid ID format' });
       return;
     }
-    const request = await Request.findById(requestId);
+    const safeRequestId = new mongoose.Types.ObjectId(requestId);
+    const safeRevieweeId = new mongoose.Types.ObjectId(revieweeId);
+    const request = await Request.findById(safeRequestId);
     if (!request) {
       res.status(404).json({ success: false, error: 'Request not found' });
       return;
@@ -37,15 +39,15 @@ router.post('/', validate(createReviewSchema), async (req, res, next) => {
       res.status(400).json({ success: false, error: 'Not a participant in this request' });
       return;
     }
-    const existing = await Review.findOne({ request: requestId, reviewer: userId });
+    const existing = await Review.findOne({ request: safeRequestId, reviewer: userId });
     if (existing) {
       res.status(409).json({ success: false, error: 'You have already reviewed this request' });
       return;
     }
     const review = await Review.create({
-      request: requestId,
+      request: safeRequestId,
       reviewer: userId,
-      reviewee: revieweeId,
+      reviewee: safeRevieweeId,
       rating,
       comment: comment ?? '',
     });
@@ -54,7 +56,7 @@ router.post('/', validate(createReviewSchema), async (req, res, next) => {
       { $group: { _id: null, avgRating: { $avg: '$rating' }, count: { $sum: 1 } } },
     ]);
     if (agg.length > 0) {
-      await User.findByIdAndUpdate(revieweeId, {
+      await User.findByIdAndUpdate(safeRevieweeId, {
         averageRating: Math.round(agg[0].avgRating * 10) / 10,
         reviewCount: agg[0].count,
       });

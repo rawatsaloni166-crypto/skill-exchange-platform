@@ -29,6 +29,12 @@ router.get('/', async (req, res, next) => {
 
 router.put('/profile', validate(updateProfileSchema), async (req, res, next) => {
   try {
+    const userId = req.user!.userId;
+    if (!mongoose.isValidObjectId(userId)) {
+      res.status(401).json({ success: false, error: 'Invalid token payload' });
+      return;
+    }
+    const safeUserId = new mongoose.Types.ObjectId(userId);
     const updates = req.body as {
       displayName?: string;
       bio?: string;
@@ -38,7 +44,7 @@ router.put('/profile', validate(updateProfileSchema), async (req, res, next) => 
       skillsWanted?: string[];
     };
     const user = await User.findByIdAndUpdate(
-      req.user!.userId,
+      safeUserId,
       { $set: updates },
       { new: true, runValidators: true }
     ).select('-password');
