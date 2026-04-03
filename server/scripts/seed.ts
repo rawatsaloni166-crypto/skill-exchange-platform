@@ -8,6 +8,7 @@ import Review from '../src/models/Review';
 import Flag from '../src/models/Flag';
 
 async function seed() {
+  // WARNING: This script is for development only. Never run against production databases.
   await mongoose.connect(config.mongoUri);
   console.log('Connected to MongoDB');
   

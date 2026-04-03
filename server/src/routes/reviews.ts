@@ -57,7 +57,7 @@ router.post('/', validate(createReviewSchema), async (req, res, next) => {
     ]);
     if (agg.length > 0) {
       await User.findByIdAndUpdate(safeRevieweeId, {
-        averageRating: Math.round(agg[0].avgRating * 10) / 10,
+        averageRating: Math.round(agg[0].avgRating * 10) / 10, // round to 1 decimal place
         reviewCount: agg[0].count,
       });
     }

@@ -21,7 +21,9 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     req.user = { userId: payload.userId, role: payload.role };
     next();
   } catch (err) {
-    console.error('JWT verification failed:', err instanceof Error ? err.message : 'unknown error');
+    if (config.nodeEnv !== 'production') {
+      console.error('JWT verification failed:', err instanceof Error ? err.message : 'unknown error');
+    }
     res.status(401).json({ success: false, error: 'Invalid or expired token' });
   }
 }

@@ -107,16 +107,22 @@ router.patch('/:id', validate(updateRequestSchema), async (req, res, next) => {
     const isFrom = fromUserId === userId;
     const isTo = toUserId === userId;
     const currentStatus = request.status;
-    let valid = false;
-    if (isFrom) {
-      if (status === 'cancelled' && (currentStatus === 'pending' || currentStatus === 'accepted')) valid = true;
-      if (status === 'completed' && currentStatus === 'accepted') valid = true;
-    }
-    if (isTo) {
-      if (status === 'accepted' && currentStatus === 'pending') valid = true;
-      if (status === 'declined' && currentStatus === 'pending') valid = true;
-    }
-    if (!valid) {
+
+    // Valid transitions keyed by role then target status → allowed current statuses
+    const fromUserTransitions: Record<string, string[]> = {
+      cancelled: ['pending', 'accepted'],
+      completed: ['accepted'],
+    };
+    const toUserTransitions: Record<string, string[]> = {
+      accepted: ['pending'],
+      declined: ['pending'],
+    };
+
+    const allowedFromCurrent =
+      (isFrom && fromUserTransitions[status]?.includes(currentStatus)) ||
+      (isTo && toUserTransitions[status]?.includes(currentStatus));
+
+    if (!allowedFromCurrent) {
       res.status(400).json({ success: false, error: 'Invalid status transition' });
       return;
     }
