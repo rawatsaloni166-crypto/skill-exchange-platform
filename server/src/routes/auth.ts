@@ -42,8 +42,7 @@ router.post('/register', validate(registerSchema), async (req, res, next) => {
       { expiresIn: config.jwtExpiresIn as jwt.SignOptions['expiresIn'] }
     );
     res.cookie('token', token, cookieOptions);
-    const { password: _pw, ...userData } = user.toObject();
-    void _pw;
+    const { password: _password, ...userData } = user.toObject();
     res.status(201).json({ success: true, data: userData });
   } catch (err) {
     next(err);
@@ -69,8 +68,7 @@ router.post('/login', validate(loginSchema), async (req, res, next) => {
       { expiresIn: config.jwtExpiresIn as jwt.SignOptions['expiresIn'] }
     );
     res.cookie('token', token, cookieOptions);
-    const { password: _pw, ...userData } = user.toObject();
-    void _pw;
+    const { password: _password, ...userData } = user.toObject();
     res.json({ success: true, data: userData });
   } catch (err) {
     next(err);
