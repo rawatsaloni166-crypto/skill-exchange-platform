@@ -5,12 +5,16 @@ import Review from '../models/Review';
 
 const router = Router();
 
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 router.get('/', async (req, res, next) => {
   try {
     const { search, skillOffered, skillWanted, location } = req.query as Record<string, string | undefined>;
     const query: FilterQuery<IUser> = { role: 'user' };
     if (search) {
-      query.displayName = { $regex: search, $options: 'i' };
+      query.displayName = { $regex: escapeRegex(search), $options: 'i' };
     }
     if (skillOffered) {
       query.skillsOffered = { $in: [skillOffered] };
@@ -19,7 +23,7 @@ router.get('/', async (req, res, next) => {
       query.skillsWanted = { $in: [skillWanted] };
     }
     if (location) {
-      query.location = { $regex: location, $options: 'i' };
+      query.location = { $regex: escapeRegex(location), $options: 'i' };
     }
     const users = await User.find(query).select('-password');
     res.json({ success: true, data: users });

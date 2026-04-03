@@ -3,6 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 import { config } from './config';
 import { connectDB } from './db';
 import { errorHandler } from './middleware/errorHandler';
@@ -21,6 +22,16 @@ app.use(helmet());
 app.use(cors({ origin: config.clientUrl, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
+
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: 'Too many requests, please try again later' },
+  })
+);
 
 app.use('/api/auth', authRouter);
 app.use('/api/me', meRouter);

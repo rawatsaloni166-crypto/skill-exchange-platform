@@ -1,12 +1,23 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
 import { config } from '../config';
 import User from '../models/User';
 import { validate } from '../middleware/validate';
 import { registerSchema, loginSchema } from '../schemas/auth';
 
 const router = Router();
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many requests, please try again later' },
+});
+
+router.use(authLimiter);
 
 const cookieOptions = {
   httpOnly: true,
