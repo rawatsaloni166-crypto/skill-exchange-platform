@@ -35,7 +35,7 @@ router.put('/profile', validate(updateProfileSchema), async (req, res, next) => 
       return;
     }
     const safeUserId = new mongoose.Types.ObjectId(userId);
-    const updates = req.body as {
+    const rawUpdates = req.body as {
       displayName?: string;
       bio?: string;
       location?: string;
@@ -43,6 +43,14 @@ router.put('/profile', validate(updateProfileSchema), async (req, res, next) => 
       skillsOffered?: string[];
       skillsWanted?: string[];
     };
+    // Explicitly build update from known-safe Zod-validated fields only
+    const updates: Record<string, unknown> = {};
+    if (rawUpdates.displayName !== undefined) updates['displayName'] = String(rawUpdates.displayName);
+    if (rawUpdates.bio !== undefined) updates['bio'] = String(rawUpdates.bio);
+    if (rawUpdates.location !== undefined) updates['location'] = String(rawUpdates.location);
+    if (rawUpdates.avatarUrl !== undefined) updates['avatarUrl'] = String(rawUpdates.avatarUrl);
+    if (rawUpdates.skillsOffered !== undefined) updates['skillsOffered'] = rawUpdates.skillsOffered.map(String);
+    if (rawUpdates.skillsWanted !== undefined) updates['skillsWanted'] = rawUpdates.skillsWanted.map(String);
     const user = await User.findByIdAndUpdate(
       safeUserId,
       { $set: updates },
