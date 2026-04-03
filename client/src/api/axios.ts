@@ -8,6 +8,20 @@ const api = axios.create({
   },
 });
 
+// Read CSRF token from cookie and attach to mutating requests
+function getCsrfToken(): string {
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+api.interceptors.request.use((config) => {
+  const mutating = ['post', 'put', 'patch', 'delete'];
+  if (config.method && mutating.includes(config.method.toLowerCase())) {
+    config.headers['x-csrf-token'] = getCsrfToken();
+  }
+  return config;
+});
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {

@@ -130,9 +130,17 @@ export default function ProfileEdit() {
               onChange={(e) => setAvatarUrl(e.target.value)}
               placeholder="https://…"
             />
-            {avatarUrl && /^https?:\/\//.test(avatarUrl) && (
-              <img src={avatarUrl} alt="Avatar preview" className="avatar-preview" />
-            )}
+            {avatarUrl && (() => {
+              try {
+                const parsed = new URL(avatarUrl);
+                if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+                  return <img src={parsed.href} alt="Avatar preview" className="avatar-preview" />;
+                }
+              } catch {
+                // invalid URL — no preview
+              }
+              return null;
+            })()}
           </div>
 
           <div className="form-group">

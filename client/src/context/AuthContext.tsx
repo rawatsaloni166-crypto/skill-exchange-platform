@@ -31,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // GET /api/me both restores session and primes the CSRF token cookie
     getMe()
       .then((user) => setCurrentUser(user))
       .catch(() => setCurrentUser(null))

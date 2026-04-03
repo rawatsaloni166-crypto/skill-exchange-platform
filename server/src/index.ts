@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
+import crypto from 'crypto';
 import { config } from './config';
 import { connectDB } from './db';
 import { errorHandler } from './middleware/errorHandler';
@@ -23,21 +24,36 @@ app.use(cors({ origin: config.clientUrl, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
 
-// CSRF protection: validate Origin header for state-mutating requests
+// CSRF protection: double-submit cookie pattern
+// For GET requests, set/refresh the CSRF token cookie
+// For state-mutating requests, validate the X-CSRF-Token header against the cookie
+const CSRF_COOKIE = 'csrf_token';
+const CSRF_HEADER = 'x-csrf-token';
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
 app.use((req, res, next) => {
-  const mutating = ['POST', 'PUT', 'PATCH', 'DELETE'];
-  if (!mutating.includes(req.method)) return next();
-  const origin = req.headers['origin'];
-  const referer = req.headers['referer'];
-  const allowed = config.clientUrl;
-  if (
-    (origin && origin === allowed) ||
-    (referer && referer.startsWith(allowed)) ||
-    config.nodeEnv !== 'production'
-  ) {
+  if (SAFE_METHODS.has(req.method)) {
+    // Ensure CSRF token cookie exists
+    if (!req.cookies[CSRF_COOKIE]) {
+      const token = crypto.randomBytes(32).toString('hex');
+      res.cookie(CSRF_COOKIE, token, {
+        httpOnly: false,   // must be readable by client JS
+        sameSite: 'lax',
+        secure: config.nodeEnv === 'production',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+    }
     return next();
   }
-  res.status(403).json({ success: false, error: 'Forbidden: invalid request origin' });
+
+  // Mutating requests: validate CSRF token
+  const cookieToken = req.cookies[CSRF_COOKIE] as string | undefined;
+  const headerToken = req.headers[CSRF_HEADER] as string | undefined;
+
+  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+    return res.status(403).json({ success: false, error: 'Forbidden: invalid CSRF token' });
+  }
+  next();
 });
 
 app.use(
@@ -49,6 +65,12 @@ app.use(
     message: { success: false, error: 'Too many requests, please try again later' },
   })
 );
+
+// Expose current CSRF token to client
+app.get('/api/csrf', (req, res) => {
+  const token = req.cookies[CSRF_COOKIE] as string | undefined;
+  res.json({ success: true, data: { csrfToken: token ?? '' } });
+});
 
 app.use('/api/auth', authRouter);
 app.use('/api/me', meRouter);
