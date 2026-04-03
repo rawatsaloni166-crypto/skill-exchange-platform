@@ -23,6 +23,23 @@ app.use(cors({ origin: config.clientUrl, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
 
+// CSRF protection: validate Origin header for state-mutating requests
+app.use((req, res, next) => {
+  const mutating = ['POST', 'PUT', 'PATCH', 'DELETE'];
+  if (!mutating.includes(req.method)) return next();
+  const origin = req.headers['origin'];
+  const referer = req.headers['referer'];
+  const allowed = config.clientUrl;
+  if (
+    (origin && origin === allowed) ||
+    (referer && referer.startsWith(allowed)) ||
+    config.nodeEnv !== 'production'
+  ) {
+    return next();
+  }
+  res.status(403).json({ success: false, error: 'Forbidden: invalid request origin' });
+});
+
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
