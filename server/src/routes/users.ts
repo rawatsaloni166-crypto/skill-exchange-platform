@@ -13,10 +13,10 @@ router.get('/', async (req, res, next) => {
       query.displayName = { $regex: search, $options: 'i' };
     }
     if (skillOffered) {
-      query.skillsOffered = skillOffered;
+      query.skillsOffered = { $in: [skillOffered] };
     }
     if (skillWanted) {
-      query.skillsWanted = skillWanted;
+      query.skillsWanted = { $in: [skillWanted] };
     }
     if (location) {
       query.location = { $regex: location, $options: 'i' };

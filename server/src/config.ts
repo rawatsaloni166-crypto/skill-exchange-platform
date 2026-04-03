@@ -1,3 +1,7 @@
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET must be set in production');
+}
+
 export const config = {
   port: process.env.PORT || '5000',
   mongoUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/skill-exchange',

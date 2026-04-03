@@ -45,11 +45,13 @@ router.post('/', validate(createReviewSchema), async (req, res, next) => {
       comment: comment ?? '',
     });
     const allReviews = await Review.find({ reviewee: revieweeId });
-    const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
-    await User.findByIdAndUpdate(revieweeId, {
-      averageRating: Math.round(avgRating * 10) / 10,
-      reviewCount: allReviews.length,
-    });
+    if (allReviews.length > 0) {
+      const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+      await User.findByIdAndUpdate(revieweeId, {
+        averageRating: Math.round(avgRating * 10) / 10,
+        reviewCount: allReviews.length,
+      });
+    }
     res.status(201).json({ success: true, data: review });
   } catch (err) {
     next(err);
