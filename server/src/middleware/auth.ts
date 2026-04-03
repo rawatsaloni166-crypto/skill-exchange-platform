@@ -20,7 +20,8 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     const payload = jwt.verify(token, config.jwtSecret) as { userId: string; role: string };
     req.user = { userId: payload.userId, role: payload.role };
     next();
-  } catch {
+  } catch (err) {
+    console.error('JWT verification failed:', err instanceof Error ? err.message : 'unknown error');
     res.status(401).json({ success: false, error: 'Invalid or expired token' });
   }
 }

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { updateProfileSchema } from '../schemas/profile';
@@ -10,7 +11,12 @@ router.use(authenticate);
 
 router.get('/', async (req, res, next) => {
   try {
-    const user = await User.findById(req.user!.userId).select('-password');
+    const userId = req.user!.userId;
+    if (!mongoose.isValidObjectId(userId)) {
+      res.status(401).json({ success: false, error: 'Invalid token payload' });
+      return;
+    }
+    const user = await User.findById(userId).select('-password');
     if (!user) {
       res.status(404).json({ success: false, error: 'User not found' });
       return;

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { createReviewSchema } from '../schemas/review';
@@ -18,6 +19,10 @@ router.post('/', validate(createReviewSchema), async (req, res, next) => {
       rating: number;
       comment?: string;
     };
+    if (!mongoose.isValidObjectId(requestId) || !mongoose.isValidObjectId(revieweeId)) {
+      res.status(400).json({ success: false, error: 'Invalid ID format' });
+      return;
+    }
     const request = await Request.findById(requestId);
     if (!request) {
       res.status(404).json({ success: false, error: 'Request not found' });
@@ -44,12 +49,14 @@ router.post('/', validate(createReviewSchema), async (req, res, next) => {
       rating,
       comment: comment ?? '',
     });
-    const allReviews = await Review.find({ reviewee: revieweeId });
-    if (allReviews.length > 0) {
-      const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+    const agg = await Review.aggregate<{ avgRating: number; count: number }>([
+      { $match: { reviewee: review.reviewee } },
+      { $group: { _id: null, avgRating: { $avg: '$rating' }, count: { $sum: 1 } } },
+    ]);
+    if (agg.length > 0) {
       await User.findByIdAndUpdate(revieweeId, {
-        averageRating: Math.round(avgRating * 10) / 10,
-        reviewCount: allReviews.length,
+        averageRating: Math.round(agg[0].avgRating * 10) / 10,
+        reviewCount: agg[0].count,
       });
     }
     res.status(201).json({ success: true, data: review });

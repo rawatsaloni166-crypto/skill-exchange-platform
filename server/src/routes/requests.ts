@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { createRequestSchema, updateRequestSchema } from '../schemas/request';
@@ -19,6 +20,10 @@ router.post('/', validate(createRequestSchema), async (req, res, next) => {
     };
     if (toUser === req.user!.userId) {
       res.status(400).json({ success: false, error: 'Cannot send a request to yourself' });
+      return;
+    }
+    if (!mongoose.isValidObjectId(toUser)) {
+      res.status(400).json({ success: false, error: 'Invalid user ID' });
       return;
     }
     const targetUser = await User.findById(toUser);
