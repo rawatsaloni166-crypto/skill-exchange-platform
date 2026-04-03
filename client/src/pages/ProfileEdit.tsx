@@ -130,7 +130,7 @@ export default function ProfileEdit() {
               onChange={(e) => setAvatarUrl(e.target.value)}
               placeholder="https://…"
             />
-            {avatarUrl && (
+            {avatarUrl && /^https?:\/\//.test(avatarUrl) && (
               <img src={avatarUrl} alt="Avatar preview" className="avatar-preview" />
             )}
           </div>
