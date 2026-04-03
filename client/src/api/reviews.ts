@@ -2,6 +2,7 @@ import api from './axios';
 
 export interface CreateReviewPayload {
   requestId: string;
+  revieweeId: string;
   rating: number;
   comment: string;
 }

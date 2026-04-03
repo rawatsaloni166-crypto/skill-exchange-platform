@@ -89,7 +89,7 @@ export default function RequestDetail() {
     setReviewError('');
     setReviewLoading(true);
     try {
-      await createReview({ requestId: id, rating: reviewRating, comment: reviewComment });
+      await createReview({ requestId: id, revieweeId: otherUser._id, rating: reviewRating, comment: reviewComment });
       setReviewDone(true);
       setShowReviewForm(false);
     } catch (err: unknown) {
